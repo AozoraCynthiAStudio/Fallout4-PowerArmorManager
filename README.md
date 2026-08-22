@@ -3,6 +3,10 @@
 > Fallout 4 的小型动力甲仓库终端，基于 PrismaUI 2 与 GOE，支持键盘、手柄和滚轮操作。  
 > A compact Fallout 4 power armor storage terminal powered by PrismaUI 2 and GOE, with keyboard, gamepad, and wheel navigation.
 
+**暂时不支持最新的 Fallout 4 AE 版本（1.11.240）。**
+**The latest Fallout 4 AE version (1.11.240) is not supported at this time.**
+
+
 [![Status](https://img.shields.io/badge/status-stable-2ea44f?style=for-the-badge)](releases/v2.2.7/RELEASE_NOTES.md)
 [![Release](https://img.shields.io/badge/release-v2.2.7-0969da?style=for-the-badge)](releases/v2.2.7/)
 [![Fallout 4](https://img.shields.io/badge/Fallout%204-mod-4e73df?style=for-the-badge)](https://fallout.bethesda.net/)
