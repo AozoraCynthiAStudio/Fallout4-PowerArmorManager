@@ -23,7 +23,7 @@ The following uses are allowed without separate permission:
 
 Please retain the original author and repository attribution:
 
-- Author: ` CythiaSu `
+- Author: `CythiaSu`
 - Repository: https://github.com/CythiaSu/Fallout4-PowerArmorManager
 
 Keep this license file with redistributed source or compiled releases where practical. Derivative versions should clearly identify substantial changes from the original project and should not present themselves as the official release.
@@ -76,7 +76,7 @@ This project is provided "as is", without warranty of any kind. The author is no
 
 在条件允许的情况下，请保留以下原作者和仓库来源：
 
-- 作者：` CythiaSu `
+- 作者：`CythiaSu`
 - 仓库：https://github.com/CythiaSu/Fallout4-PowerArmorManager
 
 再发布源码或编译包时，请尽量保留本许可证文件。衍生版本应明确标注相对于原项目的重要修改，不应冒充官方版本。
