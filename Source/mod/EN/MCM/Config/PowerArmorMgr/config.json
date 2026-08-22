@@ -1,0 +1,77 @@
+{
+  "modName": "PowerArmorMgr",
+  "displayName": "Armor Storage",
+  "minMcmVersion": 1,
+  "pluginRequirements": [
+    "PowerArmorMgr.esp"
+  ],
+  "content": [
+    {
+      "type": "section",
+      "text": "Status"
+    },
+    {
+      "type": "text",
+      "text": "Store power armor in a hidden space, then deploy it back in front of the player. Storage data is saved inside the current save game."
+    },
+    {
+      "type": "text",
+      "text": "Warning: Moving quest-specific power armor with this mod may break the related quest. Use it with caution."
+    }
+  ],
+  "pages": [
+    {
+      "pageDisplayName": "Hotkeys",
+      "content": [
+        {
+          "type": "section",
+          "text": "Hotkeys"
+        },
+        {
+          "id": "PA_MenuHotkey",
+          "type": "hotkey",
+          "text": "Open storage interface",
+          "help": "Opens the Armor Storage bay interface.",
+          "valueOptions": {
+            "allowModifierKeys": true
+          }
+        },
+        {
+          "id": "PA_PrimaryArmorHotkey",
+          "type": "hotkey",
+          "text": "Deploy/recall Primary Armor",
+          "help": "Deploys the Primary Armor stored in bay 01, or recalls the same bound frame when it is deployed. Hotkey deployment and recall preserve the binding and do not use the crosshair or GOE. Deploying through the storage UI releases the binding; storing a new frame in bay 01 creates a new binding.",
+          "valueOptions": {
+            "allowModifierKeys": true
+          }
+        },
+        {
+          "id": "bEnableOutfitNotifications:Profile1",
+          "type": "switcher",
+          "text": "Show deploy/recall completion messages",
+          "help": "When disabled, successful deployment and primary recall messages are hidden. Save confirmation and failure messages remain.",
+          "valueOptions": {
+            "sourceType": "ModSettingBool"
+          }
+        },
+        {
+          "type": "section",
+          "text": "Voice"
+        },
+        {
+          "id": "iVoicePack:Profile1",
+          "type": "dropdown",
+          "text": "Voice type",
+          "help": "Selects the voice used when opening or closing the storage interface, storing or deploying power armor, and summoning or recalling Primary Armor. A new line immediately stops the previous line.",
+          "valueOptions": {
+            "sourceType": "ModSettingInt",
+            "options": [
+              "Chinese Male",
+              "English Female"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

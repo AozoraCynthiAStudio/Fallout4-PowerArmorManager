@@ -1,0 +1,23 @@
+{
+  "modName": "PowerArmorMgr",
+  "keybinds": [
+    {
+      "id": "PA_MenuHotkey",
+      "desc": "Open or close Armor Storage",
+      "action": {
+        "type": "CallGlobalFunction",
+        "script": "PowerArmorMgr",
+        "function": "OnMcmMenuHotkey"
+      }
+    },
+    {
+      "id": "PA_PrimaryArmorHotkey",
+      "desc": "Deploy or recall the bound Primary Armor",
+      "action": {
+        "type": "CallGlobalFunction",
+        "script": "PowerArmorMgr",
+        "function": "OnMcmPrimaryArmorHotkey"
+      }
+    }
+  ]
+}

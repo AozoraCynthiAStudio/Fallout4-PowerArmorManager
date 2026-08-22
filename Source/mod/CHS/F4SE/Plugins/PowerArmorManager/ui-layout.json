@@ -1,0 +1,32 @@
+{
+  "profiles": {
+    "compact16x9": {
+      "variables": {
+        "terminal-width": "min(34vw, 58vh)",
+        "terminal-right": "16vw",
+        "terminal-top": "53%"
+      }
+    },
+    "compact16x10": {
+      "variables": {
+        "terminal-width": "min(34vw, 58vh)",
+        "terminal-right": "16vw",
+        "terminal-top": "53%"
+      }
+    },
+    "standard": {
+      "variables": {
+        "terminal-width": "min(34vw, 58vh)",
+        "terminal-right": "16vw",
+        "terminal-top": "53%"
+      }
+    },
+    "ultrawide": {
+      "variables": {
+        "terminal-width": "min(34vw, 58vh)",
+        "terminal-right": "17vw",
+        "terminal-top": "53%"
+      }
+    }
+  }
+}

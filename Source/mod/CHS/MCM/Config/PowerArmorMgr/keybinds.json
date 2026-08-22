@@ -1,0 +1,23 @@
+{
+  "modName": "PowerArmorMgr",
+  "keybinds": [
+    {
+      "id": "PA_MenuHotkey",
+      "desc": "打开/关闭动力甲仓库",
+      "action": {
+        "type": "CallGlobalFunction",
+        "script": "PowerArmorMgr",
+        "function": "OnMcmMenuHotkey"
+      }
+    },
+    {
+      "id": "PA_PrimaryArmorHotkey",
+      "desc": "部署或收回已绑定的主动力甲",
+      "action": {
+        "type": "CallGlobalFunction",
+        "script": "PowerArmorMgr",
+        "function": "OnMcmPrimaryArmorHotkey"
+      }
+    }
+  ]
+}

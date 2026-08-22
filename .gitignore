@@ -1,0 +1,27 @@
+# Native build state
+.xmake/
+build/
+**/build/
+*.dll
+*.pdb
+*.lib
+*.exp
+*.ilk
+*.obj
+*.idb
+
+# Fallout 4 compiled/runtime artifacts
+*.pex
+*.esp
+*.esm
+*.esl
+*.ba2
+
+# Local/editor/cache files
+.vs/
+.vscode/
+__pycache__/
+*.pyc
+*.log
+Thumbs.db
+desktop.ini

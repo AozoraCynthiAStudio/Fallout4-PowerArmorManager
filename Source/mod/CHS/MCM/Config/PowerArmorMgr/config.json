@@ -1,0 +1,77 @@
+{
+  "modName": "PowerArmorMgr",
+  "displayName": "动力甲仓库",
+  "minMcmVersion": 1,
+  "pluginRequirements": [
+    "PowerArmorMgr.esp"
+  ],
+  "content": [
+    {
+      "type": "section",
+      "text": "状态"
+    },
+    {
+      "type": "text",
+      "text": "动力甲会存放在一个秘密基地，部署后传送过来。仓库数据写入当前存档。"
+    },
+    {
+      "type": "text",
+      "text": "警告：使用本模组把任务特定的动力甲进行移动，可能会导致任务 bug。针对这种情况，请慎重考虑。"
+    }
+  ],
+  "pages": [
+    {
+      "pageDisplayName": "热键",
+      "content": [
+        {
+          "type": "section",
+          "text": "热键"
+        },
+        {
+          "id": "PA_MenuHotkey",
+          "type": "hotkey",
+          "text": "打开仓库界面",
+          "help": "打开动力甲仓库槽位界面。",
+          "valueOptions": {
+            "allowModifierKeys": true
+          }
+        },
+        {
+          "id": "PA_PrimaryArmorHotkey",
+          "type": "hotkey",
+          "text": "部署/收回主动力甲",
+          "help": "01 槽位中的主动力甲在仓库时会部署，已经部署时会直接收回同一台动力甲。热键部署和收回均保持绑定，不需要准星或 GOE。通过仓库界面部署会释放绑定；再把新动力甲存入 01 槽位会建立新的绑定。",
+          "valueOptions": {
+            "allowModifierKeys": true
+          }
+        },
+        {
+          "id": "bEnableOutfitNotifications:Profile1",
+          "type": "switcher",
+          "text": "显示部署/召回完成提示",
+          "help": "关闭后隐藏部署成功和主动力甲召回成功提示；保存确认与失败提示仍保留。",
+          "valueOptions": {
+            "sourceType": "ModSettingBool"
+          }
+        },
+        {
+          "type": "section",
+          "text": "语音"
+        },
+        {
+          "id": "iVoicePack:Profile1",
+          "type": "dropdown",
+          "text": "语音类型",
+          "help": "选择动力甲仓库在启动、关闭、存放、部署以及主动力甲召唤和召回时使用的语音。新语音会立即停止上一条语音。",
+          "valueOptions": {
+            "sourceType": "ModSettingInt",
+            "options": [
+              "中文男声",
+              "英文女声"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

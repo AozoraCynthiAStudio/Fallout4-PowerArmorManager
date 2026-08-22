@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Armor Storage</title>
+  <style>
+    :root {
+      --cyan: #a8f5f2;
+      --cyan-dim: #6bc8c7;
+      --green: #a1efad;
+      --yellow: #f2c85a;
+      --red: #ed8278;
+      --screen: rgb(1, 24, 25);
+      --text: #e2f8f4;
+      --muted: #7db8b5;
+      font-family: "Segoe UI", "Arial Narrow", "Microsoft YaHei UI", sans-serif;
+    }
+    * { box-sizing: border-box; cursor: none !important; }
+    html, body { width: 100%; min-height: 100%; margin: 0; overflow: hidden; background: transparent; color: var(--text); letter-spacing: 0; }
+    body { min-width: 0; }
+    button, input { font: inherit; }
+    .stage { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+    .stage:not(.is-ready) .terminal { opacity: 0; transform: translateY(30vh) scale(0.95); }
+    .terminal { position: absolute; top: calc(var(--pa-terminal-top, 53%) + var(--pa-terminal-offset-y, 0px)); right: calc(var(--pa-terminal-right, 16vw) - var(--pa-terminal-offset-x, 0px)); width: var(--pa-terminal-width, 480px); height: var(--pa-terminal-height, auto); aspect-ratio: 2 / 3; transform: translateY(-50%); filter: drop-shadow(0 24px 28px rgba(0, 0, 0, 0.52)); }
+    .stage.is-entering .terminal { animation: terminal-enter 720ms cubic-bezier(0.18, 0.8, 0.24, 1) both; }
+    @keyframes terminal-enter { from { opacity: 0; transform: translateY(30vh) scale(0.95); } to { opacity: 1; transform: translateY(-50%) scale(1); } }
+    @keyframes terminal-exit { from { opacity: 1; transform: translateY(-50%) scale(1); } to { opacity: 0; transform: translateY(30vh) scale(0.96); } }
+    .stage.is-closing .terminal { animation: terminal-exit 460ms cubic-bezier(0.55, 0.08, 0.68, 0.32) both; }
+    .terminal-skin { position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; object-fit: fill; pointer-events: none; user-select: none; opacity: var(--pa-terminal-opacity, 0.86); filter: brightness(var(--pa-terminal-brightness, 1.04)) saturate(var(--pa-terminal-saturation, 0.72)) contrast(var(--pa-terminal-contrast, 0.82)); }
+    .terminal-backplate { position: absolute; z-index: 0; left: 14.5%; right: 14.5%; top: 7%; bottom: 6.5%; background: var(--screen); clip-path: polygon(7% 0, 93% 0, 100% 4%, 100% 96%, 93% 100%, 7% 100%, 0 96%, 0 4%); pointer-events: none; }
+    .terminal-screen { position: absolute; z-index: 1; left: var(--pa-terminal-screen-left, 20.5%); top: var(--pa-terminal-screen-top, 14.6%); width: var(--pa-terminal-screen-width, 59.4%); height: var(--pa-terminal-screen-height, 66.4%); overflow: hidden; padding: var(--pa-terminal-screen-padding-top, 3.2%) var(--pa-terminal-screen-padding-x, 4%) var(--pa-terminal-screen-padding-bottom, 0px); border: 0; background: var(--screen); color: var(--cyan); box-shadow: inset 0 0 25px rgba(64, 237, 232, 0.08); clip-path: polygon(4% 0, 96% 0, 100% 2.8%, 100% 100%, 0 100%, 0 2.8%); }
+    .terminal-screen::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.22; background: repeating-linear-gradient(0deg, transparent 0, transparent 3px, rgba(106, 244, 235, 0.12) 4px); }
+    .screen-content { position: relative; z-index: 1; height: 100%; display: grid; grid-template-rows: auto auto minmax(0, 1fr); gap: var(--pa-screen-content-gap, 6px); }
+    .screen-head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--pa-screen-head-gap, 8px); padding-bottom: var(--pa-screen-head-padding-bottom, 6px); border-bottom: 1px solid rgba(96, 222, 218, 0.52); }
+    .screen-heading { min-width: 0; display: flex; align-items: center; gap: 7px; }
+    .screen-heading > div { min-width: 0; flex: 1 1 auto; }
+    .screen-mark { color: var(--yellow); font-size: var(--pa-screen-mark-size, 20px); line-height: 1; }
+    .screen-title { color: var(--cyan); max-width: 100%; overflow: hidden; text-overflow: ellipsis; font-size: var(--pa-screen-title-size, 16px); font-weight: 800; line-height: 1; white-space: nowrap; text-shadow: 0 0 8px rgba(168, 245, 242, 0.2); }
+    .screen-subtitle { max-width: 100%; overflow: hidden; text-overflow: ellipsis; margin-top: var(--pa-screen-subtitle-margin-top, 4px); color: var(--cyan-dim); font-size: var(--pa-screen-subtitle-size, 8px); font-weight: 700; letter-spacing: 0.03em; white-space: nowrap; }
+    .screen-page { flex: 0 0 auto; color: var(--cyan-dim); font-size: var(--pa-screen-page-size, 11px); font-weight: 700; white-space: nowrap; }
+    .screen-head .screen-page { display: none; }
+    .screen-nav { display: flex; justify-content: space-between; align-items: baseline; padding-top: var(--pa-screen-nav-padding-top, 4px); color: var(--cyan); font-size: var(--pa-screen-nav-size, 14px); font-weight: 800; }
+    .screen-nav span { color: var(--cyan-dim); font-size: 0.82em; font-weight: 700; white-space: nowrap; }
+    .slots, .detail-view { min-height: 0; overflow-y: auto; scrollbar-width: none; }
+    .slots::-webkit-scrollbar, .detail-view::-webkit-scrollbar { width: 0; height: 0; }
+    .slots.page-flip-forward, .slots.page-flip-back { animation: list-refresh 300ms ease-out both; }
+    .screen-nav.page-flip { animation: nav-refresh 300ms ease-out both; }
+    @keyframes list-refresh { 0% { opacity: 0.18; transform: translateY(4px); clip-path: inset(0 0 100% 0); } 42% { opacity: 0.9; clip-path: inset(0 0 28% 0); } 100% { opacity: 1; transform: none; clip-path: inset(0); } }
+    @keyframes nav-refresh { 0% { opacity: 0.45; transform: translateY(2px); } 100% { opacity: 1; transform: none; } }
+    .slot-row { min-height: var(--pa-slot-row-height, 28px); display: grid; grid-template-columns: var(--pa-slot-number-width, 16%) minmax(0, 1fr) var(--pa-slot-state-width, 13%); align-items: center; gap: var(--pa-slot-row-gap, 7px); margin-bottom: var(--pa-slot-list-gap, 4px); padding: 0 var(--pa-slot-row-padding-x, 7px); border: 1px solid rgba(80, 173, 172, 0.48); background: rgba(0, 22, 22, 0.54); color: var(--muted); font-size: var(--pa-slot-font-size, 15px); font-weight: 700; cursor: pointer; user-select: none; }
+    .slot-row[data-filled="true"] { border-left: 3px solid var(--green); color: var(--green); }
+    .slot-row[data-primary="true"][data-filled="true"] { border-left-color: var(--yellow); }
+    .slot-row[data-selected="true"] { background: var(--cyan); border-color: var(--cyan); color: #063333; box-shadow: 0 0 10px rgba(164, 245, 243, 0.38); }
+    .slot-row[data-selected="true"] .slot-no, .slot-row[data-selected="true"] .slot-state { color: #063333; }
+    .slot-no { color: var(--cyan); font-size: 0.78em; font-family: "Cascadia Mono", Consolas, monospace; font-weight: 800; }
+    .slot-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .slot-state { justify-self: end; color: var(--cyan-dim); font-size: var(--pa-slot-state-size, 17px); line-height: 1; }
+    .slot-state.saved { color: var(--green); }
+    .slot-state.primary { color: var(--yellow); }
+    [hidden] { display: none !important; }
+
+    .detail-view { grid-row: 2 / 4; padding-right: 2px; }
+    .detail-head { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: var(--pa-detail-head-gap, 9px); min-height: var(--pa-detail-head-height, 54px); padding: var(--pa-detail-head-padding-top, 5px) var(--pa-detail-head-padding-right, 6px) var(--pa-detail-head-padding-bottom, 8px) var(--pa-detail-head-padding-left, 2px); position: relative; top: var(--pa-detail-head-y, 0px); border-bottom: 1px solid rgba(96, 222, 218, 0.52); }
+    .detail-number { color: var(--cyan); display: var(--pa-detail-number-display, none); position: relative; top: var(--pa-detail-number-y, 0px); font: 800 var(--pa-detail-number-size, 26px)/var(--pa-detail-number-line-height, 1) "Cascadia Mono", Consolas, monospace; white-space: nowrap; }
+    .detail-meta { min-width: 0; position: relative; top: var(--pa-detail-meta-y, 0px); }
+    .detail-name { color: var(--cyan); font-size: var(--pa-detail-name-size, 17px); font-weight: 800; line-height: var(--pa-detail-name-line-height, 1.05); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .detail-status { margin-top: var(--pa-detail-status-margin-top, 4px); position: relative; top: var(--pa-detail-status-y, 0px); color: var(--cyan-dim); font-size: var(--pa-detail-status-size, 10px); font-weight: 700; line-height: var(--pa-detail-status-line-height, 1); white-space: nowrap; }
+    .detail-list { display: grid; align-content: start; margin-top: var(--pa-detail-list-margin-top, 6px); }
+    .detail-row { min-height: var(--pa-detail-row-height, 42px); display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; align-content: center; column-gap: var(--pa-detail-row-gap, 7px); row-gap: var(--pa-detail-row-line-gap, 2px); padding: var(--pa-detail-row-padding-y, 4px) var(--pa-detail-row-padding-x, 6px); border-bottom: 1px solid rgba(101, 190, 187, 0.3); color: var(--text); font-size: var(--pa-detail-font-size, 14px); font-weight: 700; overflow: hidden; }
+    .detail-index { color: var(--cyan-dim); display: var(--pa-detail-index-display, none); font: 800 var(--pa-detail-index-size, 0.72em) "Cascadia Mono", Consolas, monospace; }
+    .detail-part-name { grid-column: 1 / -1; min-width: 0; position: relative; top: var(--pa-detail-part-name-y, 0px); white-space: nowrap; word-break: keep-all; overflow: hidden; text-overflow: ellipsis; line-height: var(--pa-detail-part-name-line-height, 1.05); }
+    .detail-leader { grid-column: 1; align-self: center; height: 1px; margin-top: var(--pa-detail-leader-y, 0px); overflow: hidden; background: repeating-linear-gradient(90deg, currentColor 0 2px, transparent 2px 6px); opacity: var(--pa-detail-leader-opacity, 0.48); }
+    .detail-condition { grid-column: 2; position: relative; top: var(--pa-detail-health-y, 0px); color: var(--green); font-size: var(--pa-detail-health-size, 0.78em); font-weight: 800; line-height: 1; white-space: nowrap; }
+    .detail-empty { min-height: var(--pa-detail-empty-height, 210px); display: grid; place-content: center; justify-items: center; gap: 5px; text-align: center; }
+    .detail-empty strong { color: var(--red); font-size: var(--pa-detail-error-size, 25px); letter-spacing: 0.08em; }
+    .detail-empty span { color: var(--red); font-size: var(--pa-detail-empty-size, 15px); font-weight: 800; }
+    .detail-empty small { color: #bd7169; font-size: 9px; font-weight: 700; letter-spacing: 0.06em; }
+
+    .hardware-rail { display: none; }
+    .hardware-caps, .hardware-labels, .hardware-hitboxes { position: absolute; left: var(--pa-hardware-left, 21.5%); right: var(--pa-hardware-right, 21.5%); display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--pa-hardware-gap, 1.2%); }
+    .hardware-caps { display: none; }
+    .hardware-cap { position: relative; min-width: 0; border: 1px solid rgba(8, 11, 11, 0.98); border-radius: 3px; background: linear-gradient(180deg, #7c8380 0%, #4b514f 14%, #2c3231 100%); box-shadow: inset 0 1px 0 rgba(236, 241, 238, 0.5), inset 0 -3px 0 rgba(4, 7, 7, 0.72), 0 1px 0 rgba(173, 181, 177, 0.28), 0 2px 2px rgba(0, 0, 0, 0.7); }
+    .hardware-cap::after { content: ""; position: absolute; inset: 3px 4px 3px; border: 1px solid rgba(184, 193, 188, 0.58); border-radius: 2px; box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.7), inset 0 -1px 0 rgba(232, 237, 233, 0.22); pointer-events: none; }
+    .hardware-labels { top: var(--pa-hardware-labels-top, 83.5%); height: var(--pa-hardware-labels-height, 5.8%); z-index: 4; pointer-events: none; }
+    .hardware-label { min-width: 0; display: grid; grid-template-rows: auto auto; align-content: center; justify-items: center; gap: var(--pa-hardware-label-gap, 1px); color: rgba(226, 232, 227, 0.96); text-align: center; font-weight: 800; text-shadow: 0 1px 1px rgba(0, 0, 0, 0.98), 0 -1px 0 rgba(255, 255, 255, 0.2); }
+    .hardware-label:nth-child(1) { position: relative; left: var(--pa-hardware-label-1-x, 0px); top: var(--pa-hardware-label-1-y, 0px); zoom: var(--pa-hardware-label-1-scale, 1); }
+    .hardware-label:nth-child(2) { position: relative; left: var(--pa-hardware-label-2-x, 0px); top: var(--pa-hardware-label-2-y, 0px); zoom: var(--pa-hardware-label-2-scale, 1); }
+    .hardware-label:nth-child(3) { position: relative; left: var(--pa-hardware-label-3-x, 0px); top: var(--pa-hardware-label-3-y, 0px); zoom: var(--pa-hardware-label-3-scale, 1); }
+    .hardware-label:nth-child(4) { position: relative; left: var(--pa-hardware-label-4-x, 0px); top: var(--pa-hardware-label-4-y, 0px); zoom: var(--pa-hardware-label-4-scale, 1); }
+    .hardware-key { color: rgba(242, 245, 242, 0.98); font: 900 var(--pa-hardware-key-size, 19px)/0.98 "Cascadia Mono", Consolas, monospace; letter-spacing: 0.02em; white-space: nowrap; }
+    .hardware-desc { color: rgba(225, 231, 226, 0.98); font-size: var(--pa-hardware-label-size, 14px); font-weight: 850; line-height: 1; white-space: nowrap; }
+    .hardware-hitboxes { top: var(--pa-hardware-hitboxes-top, 83%); height: var(--pa-hardware-hitboxes-height, 7.3%); z-index: 5; }
+    .hardware-hitboxes button { min-width: 0; border: 0; background: transparent; cursor: pointer; }
+    .hardware-hitboxes button:focus, .hardware-hitboxes button:focus-visible { outline: none; box-shadow: none; }
+    .slot-row:focus-visible { outline: 2px solid var(--yellow); outline-offset: -2px; }
+    .result-notice { position: fixed; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(0, 0, 0, 0.36); opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 160ms ease, visibility 0s linear 160ms; }
+    .result-notice.open { opacity: 1; visibility: visible; transition-delay: 0s; }
+    .result-card { width: min(620px, 88vw); min-height: 190px; display: grid; place-content: center; justify-items: center; padding: 28px 36px; border: 2px solid rgba(183, 214, 112, 0.86); background: rgba(8, 20, 10, 0.98); color: #dce8c5; box-shadow: 0 22px 64px rgba(0, 0, 0, 0.58); text-align: center; }
+    .result-notice[data-error="true"] .result-card { border-color: rgba(199, 130, 105, 0.92); }
+    .result-notice strong { color: var(--phosphor-bright); font-size: var(--pa-result-title-size, 30px); line-height: 1.2; }
+    .result-notice[data-error="true"] strong { color: #e5a28c; }
+    .result-notice span { margin-top: 14px; color: inherit; font-size: var(--pa-result-body-size, 18px); line-height: 1.45; white-space: pre-line; }
+    .result-hint { margin-top: 18px; color: var(--phosphor-dim); font-size: 13px; font-weight: 700; }
+
+    .confirm-overlay, .rename-overlay { position: fixed; inset: 0; z-index: 10; display: none; align-items: center; justify-content: center; padding: 20px; background: rgba(0, 6, 8, 0.72); }
+    .confirm-overlay.open, .rename-overlay.open { display: flex; }
+    .confirm-card { width: min(560px, 92vw); padding: 24px 28px; border: 1px solid rgba(164, 245, 243, 0.78); background: rgba(2, 24, 25, 0.98); box-shadow: 0 0 28px rgba(77, 235, 231, 0.22); }
+    .confirm-title { color: var(--cyan); font-size: 24px; font-weight: 800; }
+    .confirm-message { margin-top: 10px; color: var(--text); font-size: 16px; line-height: 1.45; }
+    .confirm-hint { margin-top: 12px; padding-top: 8px; border-top: 1px solid rgba(96, 222, 218, 0.3); color: var(--cyan-dim); font-size: 12px; font-weight: 700; }
+    .confirm-actions, .rename-actions { display: flex; gap: 10px; margin-top: 14px; }
+    .confirm-action, .rename-action { min-width: 96px; min-height: 38px; border: 1px solid rgba(164, 245, 243, 0.5); background: rgba(4, 26, 26, 0.9); color: var(--text); cursor: pointer; }
+    .confirm-action[data-selected="true"], .rename-action.accept { color: #062b2b; background: var(--cyan); border-color: var(--cyan); box-shadow: 0 0 12px rgba(168, 245, 242, 0.28); }
+    .confirm-action:focus, .confirm-action:focus-visible { outline: none; }
+    .confirm-action.cancel[data-selected="true"] { color: #32100d; background: var(--red); border-color: var(--red); }
+    .rename-card { width: min(520px, 90vw); padding: 24px; border: 1px solid rgba(164, 245, 243, 0.76); background: rgba(2, 24, 25, 0.98); box-shadow: 0 0 28px rgba(77, 235, 231, 0.22); }
+    .rename-kicker { color: var(--cyan-dim); font-size: 12px; font-weight: 700; letter-spacing: 0.12em; }
+    .rename-title { margin-top: 5px; color: var(--cyan); font-size: 24px; font-weight: 800; }
+    .rename-message { margin-top: 12px; color: var(--text); font-size: 16px; }
+    .rename-input { width: 100%; min-height: 44px; margin-top: 16px; padding: 8px 10px; border: 1px solid rgba(164, 245, 243, 0.58); outline: none; background: rgba(0, 14, 15, 0.96); color: var(--text); font: inherit; }
+    .rename-input:focus { border-color: var(--cyan); box-shadow: 0 0 0 2px rgba(164, 245, 243, 0.16); }
+    .rename-hint { margin-top: 10px; color: var(--cyan-dim); font-size: 12px; font-weight: 700; }
+    @media (max-width: 760px), (max-height: 620px) { .confirm-card { padding: 16px; } .confirm-title { font-size: 18px; } .confirm-message { font-size: 13px; } .result-card { width: min(500px, 94vw); min-height: 140px; padding: 18px; } .result-notice strong { font-size: 20px; } .result-notice span { margin-top: 8px; font-size: 14px; } .result-hint { margin-top: 10px; font-size: 11px; } }
+
+    /* BOS shell skin v2.1.8: the PNG supplies the frame, screen glass and physical keys. */
+    :root { --phosphor: #b9c985; --phosphor-bright: #dce8aa; --phosphor-dim: #74855d; --phosphor-warn: #c79a55; --screen-ink: rgba(7, 18, 6, 0.68); }
+    html[lang="en"] .screen-title, html[lang="en"] .screen-subtitle, html[lang="en"] .screen-nav, html[lang="en"] .slot-row, html[lang="en"] .detail-view, html[lang="en"] .hardware-label { font-family: "Segoe UI", "Arial Narrow", "Microsoft YaHei UI", sans-serif; }
+    html[lang="en"] .screen-heading > div { min-width: 0; }
+    .terminal { width: var(--pa-terminal-width, min(34vw, 72vh)); filter: drop-shadow(0 20px 24px rgba(0, 0, 0, 0.64)); }
+    .terminal-skin { z-index: 2; opacity: var(--pa-terminal-opacity, 0.90); filter: brightness(var(--pa-terminal-brightness, 0.82)) saturate(var(--pa-terminal-saturation, 0.76)) contrast(var(--pa-terminal-contrast, 0.90)); }
+    .terminal-backplate { display: none; }
+    .terminal-screen { z-index: 3; left: var(--pa-terminal-screen-left, 15.5%); top: var(--pa-terminal-screen-top, 17.4%); width: var(--pa-terminal-screen-width, 45.5%); height: var(--pa-terminal-screen-height, 49.0%); padding: var(--pa-terminal-screen-padding-top, 3.8%) var(--pa-terminal-screen-padding-x, 4.5%) var(--pa-terminal-screen-padding-bottom, 0px); border: 0; border-radius: 0; background: transparent; color: var(--phosphor); box-shadow: none; clip-path: none; }
+    .terminal-screen::after { opacity: 0.13; background: repeating-linear-gradient(0deg, transparent 0, transparent 3px, rgba(180, 204, 124, 0.10) 4px); }
+    .screen-content { gap: var(--pa-screen-content-gap, 5px); }
+    .screen-head { gap: var(--pa-screen-head-gap, 6px); padding-bottom: var(--pa-screen-head-padding-bottom, 5px); border-bottom-color: rgba(142, 169, 91, 0.48); }
+    .screen-mark { color: var(--phosphor-warn); font-size: var(--pa-screen-mark-size, 17px); }
+    .screen-title, .screen-nav { color: var(--phosphor-bright); }
+    .screen-title { font-size: var(--pa-screen-title-size, 18px); text-shadow: 0 0 7px rgba(186, 207, 127, 0.14); }
+    .screen-subtitle, .screen-page, .screen-nav span { color: var(--phosphor-dim); }
+    .screen-subtitle { font-size: var(--pa-screen-subtitle-size, 7px); }
+    .screen-page { font-size: var(--pa-screen-page-size, 9px); }
+    .screen-nav { padding-top: var(--pa-screen-nav-padding-top, 3px); font-size: var(--pa-screen-nav-size, 12px); }
+    .slot-row { min-height: var(--pa-slot-row-height, 28px); margin-bottom: var(--pa-slot-list-gap, 3px); gap: var(--pa-slot-row-gap, 5px); padding: 0 var(--pa-slot-row-padding-x, 6px); border-color: rgba(106, 137, 83, 0.48); background: rgba(3, 17, 5, 0.46); color: var(--phosphor-dim); font-size: var(--pa-slot-font-size, 13px); }
+    .slot-row[data-filled="true"] { border-left-color: var(--phosphor); color: var(--phosphor); }
+    .slot-row[data-primary="true"][data-filled="true"] { border-left-color: var(--phosphor-warn); }
+    .slot-row[data-selected="true"] { background: rgba(184, 204, 126, 0.86); border-color: var(--phosphor-bright); color: #1d3020; box-shadow: 0 0 9px rgba(184, 204, 126, 0.20); }
+    .slot-row[data-selected="true"] .slot-no, .slot-row[data-selected="true"] .slot-state { color: #1d3020; }
+    .slot-row[data-primary="true"] { background: rgba(114, 82, 27, 0.28); border-color: rgba(210, 163, 93, 0.82); box-shadow: inset 3px 0 0 rgba(210, 163, 93, 0.86); }
+    .slot-row[data-primary="true"] .slot-label, .slot-row[data-primary="true"] .slot-state { color: #e4bd74; }
+    .slot-row[data-primary="true"][data-selected="true"] { background: rgba(218, 190, 112, 0.92); border-color: #f0d08d; color: #242313; box-shadow: inset 3px 0 0 #f0d08d, 0 0 9px rgba(218, 190, 112, 0.22); }
+    .slot-row[data-primary="true"][data-selected="true"] .slot-no, .slot-row[data-primary="true"][data-selected="true"] .slot-label, .slot-row[data-primary="true"][data-selected="true"] .slot-state { color: #242313; }
+    .slot-no { color: var(--phosphor); }
+    .slot-state { color: var(--phosphor-dim); font-size: var(--pa-slot-state-size, 14px); }
+    .slot-state.saved { color: var(--phosphor-bright); }
+    .slot-state.primary { color: var(--phosphor-warn); }
+    .detail-head { min-height: var(--pa-detail-head-height, 48px); border-bottom-color: rgba(142, 169, 91, 0.48); }
+    .detail-number, .detail-name { color: var(--phosphor-bright); }
+    .detail-number { font-size: var(--pa-detail-number-size, 23px); }
+    .detail-name { font-size: var(--pa-detail-name-size, 15px); }
+    .detail-status, .detail-index { color: var(--phosphor-dim); }
+    .detail-status { font-size: var(--pa-detail-status-size, 9px); }
+    .detail-row { min-height: var(--pa-detail-row-height, 27px); border-bottom-color: rgba(106, 137, 83, 0.30); color: var(--phosphor); font-size: var(--pa-detail-font-size, 12px); }
+    .detail-condition { color: var(--phosphor-bright); }
+    .detail-empty strong, .detail-empty span { color: #c78269; }
+    .detail-empty small { color: #a96f5c; }
+    .hardware-caps { display: none; }
+    .hardware-caps, .hardware-labels, .hardware-hitboxes { left: var(--pa-hardware-left, 14.0%); right: var(--pa-hardware-right, 37.5%); grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: var(--pa-hardware-gap, 1.5%); }
+    .hardware-labels { top: var(--pa-hardware-labels-top, 69.2%); height: var(--pa-hardware-labels-height, 16.2%); z-index: 6; }
+    .hardware-label { align-content: center; gap: var(--pa-hardware-label-gap, 1px); color: rgba(209, 196, 160, 0.96); text-shadow: 0 1px 1px rgba(0, 0, 0, 0.98); }
+    .hardware-key { color: rgba(226, 216, 184, 0.98); font-size: var(--pa-hardware-key-size, 15px); }
+    .hardware-desc { color: rgba(210, 198, 166, 0.98); font-size: var(--pa-hardware-label-size, 10px); }
+    .hardware-hitboxes { top: var(--pa-hardware-hitboxes-top, 68.2%); height: var(--pa-hardware-hitboxes-height, 18.0%); z-index: 7; }
+    .status-leds { position: absolute; z-index: 5; left: var(--pa-status-led-left, 75.0%); top: var(--pa-status-led-top, 22.6%); width: var(--pa-status-led-width, 8.8%); height: var(--pa-status-led-height, 4.2%); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: 1fr; gap: var(--pa-status-led-gap, 5%); align-items: center; justify-items: stretch; }
+    .status-led { width: auto; height: var(--pa-status-led-bar-height, 42%); min-width: 0; min-height: 0; border: 0; border-radius: var(--pa-status-led-radius, 1px); opacity: var(--pa-status-led-idle-opacity, 0.34); transform: none; background: var(--pa-status-led-color, #a8bd70); box-shadow: inset 0 1px 0 rgba(235, 245, 188, 0.38), 0 0 var(--pa-status-led-glow, 4px) rgba(163, 193, 96, 0.24); animation: pa-signal-wave var(--pa-status-led-cycle, 7.2s) steps(1, end) infinite; }
+    .status-led:nth-child(1) { animation-delay: 0ms; }
+    .status-led:nth-child(2) { animation-delay: 420ms; }
+    .status-led:nth-child(3) { animation-delay: 840ms; }
+    .status-led:nth-child(4) { animation-delay: 1260ms; }
+    .status-led:nth-child(5) { animation-delay: 1680ms; }
+    .status-leds[data-mode="target"] .status-led, .status-leds[data-mode="success"] .status-led { background: #c4d98c; }
+    @keyframes pa-signal-wave { 0%, 58% { opacity: var(--pa-status-led-idle-opacity, 0.34); } 10%, 48% { opacity: var(--pa-status-led-active-opacity, 0.96); box-shadow: 0 0 var(--pa-status-led-active-glow, 7px) rgba(183, 214, 112, 0.76); } 70%, 100% { opacity: var(--pa-status-led-rest-opacity, 0.42); } }
+    .breathing-light, .button-lights { position: absolute; pointer-events: none; }
+    .breathing-light { left: var(--pa-breathing-light-left, 75.6%); top: var(--pa-breathing-light-top, 77.2%); width: var(--pa-breathing-light-width, 5.4%); height: var(--pa-breathing-light-height, 6.8%); z-index: 5; overflow: hidden; border-radius: var(--pa-breathing-light-radius, 3px); clip-path: polygon(18% 0, 82% 0, 100% 15%, 100% 85%, 82% 100%, 18% 100%, 0 85%, 0 15%); background: transparent; box-shadow: none; }
+    .breathing-light::before { content: ""; position: absolute; inset: -8%; background: url("assets/light-glow-sequence.png") center 0 / 100% 1000% no-repeat; opacity: var(--pa-breathing-light-sprite-opacity, 0.70); filter: var(--pa-breathing-light-filter, sepia(1) saturate(3.2) hue-rotate(28deg) brightness(0.78)); mix-blend-mode: screen; animation: pa-lower-sprite var(--pa-breathing-light-cycle, 5.4s) steps(9, end) infinite, pa-lower-breathe var(--pa-breathing-light-cycle, 5.4s) ease-in-out infinite; }
+    @keyframes pa-lower-sprite { from { background-position: center 0%; } to { background-position: center 100%; } }
+    @keyframes pa-lower-breathe { 0%, 100% { opacity: 0.42; } 50% { opacity: 1; } }
+    .button-lights { left: var(--pa-hardware-left, 14.0%); right: var(--pa-hardware-right, 37.5%); top: var(--pa-hardware-labels-top, 69.2%); height: var(--pa-hardware-labels-height, 16.2%); z-index: 5; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: var(--pa-hardware-gap, 1.5%); }
+    .button-light { position: relative; }
+    .button-light::after { content: ""; position: absolute; left: var(--pa-button-light-left, 14%); top: var(--pa-button-light-top, 10%); width: var(--pa-button-light-width, 18%); height: var(--pa-button-light-height, 2px); border-radius: var(--pa-button-light-radius, 2px); background: rgba(170, 208, 103, var(--pa-button-light-opacity, 0.72)); box-shadow: 0 0 var(--pa-button-light-glow, 5px) rgba(170, 208, 103, 0.65); animation: pa-button-breathe var(--pa-button-light-cycle, 2.8s) ease-in-out infinite; }
+    .button-light:nth-child(2)::after { animation-delay: 350ms; } .button-light:nth-child(3)::after { animation-delay: 700ms; } .button-light:nth-child(4)::after { animation-delay: 1050ms; }
+    @keyframes pa-button-breathe { 0%, 100% { opacity: 0.34; } 50% { opacity: 0.92; } }
+    .confirm-overlay, .rename-overlay { background: rgba(2, 7, 3, 0.76); }
+    .confirm-card, .rename-card { border-color: rgba(183, 214, 112, 0.64); background: rgba(10, 23, 8, 0.97); box-shadow: 0 0 24px rgba(151, 183, 88, 0.16); }
+    .confirm-title, .rename-title { color: var(--phosphor-bright); } .confirm-message, .rename-message { color: #d8dfc3; } .confirm-hint, .rename-hint, .rename-kicker { color: var(--phosphor-dim); }
+    .confirm-action, .rename-action { border-color: rgba(183, 214, 112, 0.46); background: rgba(21, 39, 17, 0.92); color: #d8dfc3; }
+    .confirm-action[data-selected="true"], .rename-action.accept { color: #162414; background: var(--phosphor); border-color: var(--phosphor-bright); box-shadow: 0 0 10px rgba(183, 214, 112, 0.24); }
+    .rename-input { border-color: rgba(183, 214, 112, 0.48); background: rgba(5, 16, 5, 0.96); color: #d8dfc3; } .rename-input:focus { border-color: var(--phosphor-bright); box-shadow: 0 0 0 2px rgba(183, 214, 112, 0.14); }
+    /* All transient prompts share one visual scale: result, confirm and rename. */
+    .result-card, .confirm-card, .rename-card { width: min(640px, 86vw); min-height: clamp(250px, 30vh, 320px); padding: clamp(22px, 2.4vw, 32px); }
+    .result-card { display: grid; place-content: center; justify-items: center; text-align: center; }
+    .confirm-card, .rename-card { display: flex; flex-direction: column; justify-content: center; }
+    .result-notice strong, .confirm-title, .rename-title { font-size: clamp(26px, 2.2vw, 34px); font-weight: 800; line-height: 1.2; }
+    .result-notice span, .confirm-message, .rename-message { margin-top: clamp(10px, 1.1vh, 16px); font-size: clamp(18px, 1.45vw, 22px); line-height: 1.45; }
+    .result-hint, .confirm-hint, .rename-hint { margin-top: clamp(12px, 1.4vh, 18px); font-size: clamp(13px, 1.05vw, 16px); line-height: 1.2; font-weight: 700; }
+    .confirm-actions, .rename-actions { justify-content: center; }
+    .confirm-action, .rename-action { min-width: clamp(104px, 9vw, 136px); min-height: clamp(42px, 5vh, 52px); padding: 0 clamp(14px, 1.4vw, 22px); font-size: clamp(15px, 1.2vw, 18px); font-weight: 800; line-height: 1; }
+    .rename-kicker { font-size: clamp(12px, 0.95vw, 15px); }
+    .rename-input { min-height: clamp(46px, 5vh, 56px); margin-top: clamp(10px, 1.1vh, 16px); font-size: clamp(18px, 1.45vw, 22px); }
+    @media (max-width: 760px), (max-height: 620px) { .result-card, .confirm-card, .rename-card { width: min(640px, 94vw); min-height: 250px; padding: 22px; } }
+  </style>
+</head>
+<body>
+  <main class="stage">
+<section class="terminal" aria-label="Armor storage">
+      <div class="terminal-backplate" aria-hidden="true"></div>
+      <img class="terminal-skin" src="assets/terminal-shell-bos.png" alt="">
+      <div class="terminal-screen">
+        <div class="screen-content">
+          <header class="screen-head">
+            <div class="screen-heading">
+              <span class="screen-mark">&#9675;</span>
+<div><div class="screen-title" id="screenTitle">ARMOR STORAGE</div><div class="screen-subtitle">STORAGE SYSTEM</div></div>
+            </div>
+            <span class="screen-page" id="pageText">01 - 10 / 50</span>
+          </header>
+<div class="screen-nav" id="screenNav"><strong>BAYS</strong><span>01 - 10 / 50</span></div>
+          <div class="slots" id="slots"></div>
+          <div class="detail-view" id="detailView" hidden>
+            <div class="detail-head"><span class="detail-number" id="detailNumber">001</span><div class="detail-meta"><div class="detail-name" id="detailName">PRIMARY ARMOR</div><div class="detail-status" id="detailStatus">EMPTY</div></div></div>
+            <div class="detail-list" id="detailList"></div>
+          </div>
+        </div>
+      </div>
+      <div class="status-leds" id="statusLeds" data-mode="idle" aria-hidden="true"><span class="status-led"></span><span class="status-led"></span><span class="status-led"></span><span class="status-led"></span><span class="status-led"></span></div>
+      <div class="breathing-light" aria-hidden="true"></div>
+      <div class="button-lights" aria-hidden="true"><span class="button-light"></span><span class="button-light"></span><span class="button-light"></span><span class="button-light"></span></div>
+      <div class="hardware-rail" aria-hidden="true"></div>
+      <div class="hardware-caps" aria-hidden="true"><span class="hardware-cap"></span><span class="hardware-cap"></span><span class="hardware-cap"></span><span class="hardware-cap"></span></div>
+      <div class="hardware-labels" aria-hidden="true">
+        <div class="hardware-label"><span class="hardware-key" id="mainActionKey">E</span><span class="hardware-desc" id="mainActionLabel">STORE</span></div>
+        <div class="hardware-label"><span class="hardware-key" id="detailActionKey">F</span><span class="hardware-desc" id="detailActionLabel">DETAILS</span></div>
+        <div class="hardware-label"><span class="hardware-key" id="renameActionKey">R</span><span class="hardware-desc" id="renameActionLabel">RENAME</span></div>
+        <div class="hardware-label"><span class="hardware-key" id="backActionKey">TAB</span><span class="hardware-desc" id="backActionLabel">BACK</span></div>
+      </div>
+      <div class="hardware-hitboxes" aria-label="Hardware controls"><button id="mainAction" aria-label="Store or deploy power armor"></button><button id="detailAction" aria-label="View details"></button><button id="renameAction" aria-label="Rename slot"></button><button id="backAction" aria-label="Back"></button></div>
+    </section>
+  </main>
+
+  <div class="result-notice" id="resultNotice" aria-live="polite" aria-hidden="true"><div class="result-card" role="status"><strong id="resultNoticeTitle"></strong><span id="resultNoticeBody"></span><div class="result-hint">Press confirm or back to close</div></div></div>
+
+  <div class="confirm-overlay" id="confirmOverlay" aria-hidden="true"><div class="confirm-card" role="dialog" aria-modal="true"><div class="confirm-title" id="confirmTitle"></div><div class="confirm-message" id="confirmMessage"></div><div class="confirm-hint" id="confirmHint"></div><div class="confirm-actions"><button class="confirm-action" id="confirmAccept" data-selected="true">CONFIRM</button><button class="confirm-action cancel" id="confirmCancel" data-selected="false">CANCEL</button></div></div></div>
+<div class="rename-overlay" id="renameOverlay" aria-hidden="true"><div class="rename-card" role="dialog" aria-modal="true"><div class="rename-kicker">ARMOR STORAGE</div><div class="rename-title">RENAME BAY</div><div class="rename-message">Name this bay. Leave blank to clear it.</div><input class="rename-input" id="renameInput" maxlength="32" autocomplete="off"><div class="rename-hint" id="renameHint"></div><div class="rename-actions"><button class="rename-action accept" id="renameAccept">CONFIRM</button><button class="rename-action" id="renameCancel">CANCEL</button></div></div></div>
+
+  <script>
+    (function () {
+      const state = { slot: 1, maxSlot: 50, slotSummaries: {}, canStoreTarget: false, targetDetected: false, targetScanComplete: false, confirmAction: "", confirmFocus: 0, detailOpen: false };
+      const actionMap = { store: "onPowerArmorMgrStore", restore: "onPowerArmorMgrRestore", rename: "onPowerArmorMgrRename", close: "onPowerArmorMgrClose", slot: "onPowerArmorMgrSelectSlot" };
+      const pageSize = 10;
+      const selection = { index: 0 };
+      let slotPage = 0, slotRows = [], inputMode = "keyboard", layoutProfiles = null, layoutPayloadSignature = "", appliedLayoutVariables = [], closeRequested = false, closeTimer = 0, renameCloseGuardUntil = 0, layoutDebugSignature = "", inlineResultTimer = 0;
+      const stage = document.querySelector(".stage");
+      const $ = (id) => document.getElementById(id);
+      const slotsEl = $("slots"), detailView = $("detailView"), detailNumber = $("detailNumber"), detailName = $("detailName"), detailStatus = $("detailStatus"), detailList = $("detailList"), screenTitle = $("screenTitle"), screenNav = $("screenNav"), pageText = $("pageText"), statusLeds = $("statusLeds");
+      const mainAction = $("mainAction"), detailAction = $("detailAction"), renameAction = $("renameAction"), backAction = $("backAction"), mainActionLabel = $("mainActionLabel"), detailActionLabel = $("detailActionLabel"), renameActionLabel = $("renameActionLabel"), backActionLabel = $("backActionLabel"), mainActionKey = $("mainActionKey"), detailActionKey = $("detailActionKey"), renameActionKey = $("renameActionKey"), backActionKey = $("backActionKey");
+      const confirmOverlay = $("confirmOverlay"), confirmTitle = $("confirmTitle"), confirmMessage = $("confirmMessage"), confirmHint = $("confirmHint"), confirmAccept = $("confirmAccept"), confirmCancel = $("confirmCancel"), renameOverlay = $("renameOverlay"), renameInput = $("renameInput"), renameHint = $("renameHint"), renameAccept = $("renameAccept"), renameCancel = $("renameCancel"), resultNotice = $("resultNotice"), resultNoticeTitle = $("resultNoticeTitle"), resultNoticeBody = $("resultNoticeBody");
+      function english() { return document.documentElement.lang === "en"; }
+      function t(chs, en) { return english() ? en : chs; }
+      function padSlot(slot) { return String(slot).padStart(3, "0"); }
+      function callNative(listener, payload) { if (listener && typeof window[listener] === "function") window[listener](JSON.stringify(payload || {})); }
+      function setLedMode(mode) { if (statusLeds) statusLeds.dataset.mode = mode || "idle"; }
+ function defaultSlotName(slot) { if (english()) return slot === 1 ? "PRIMARY ARMOR" : slot === 2 ? "COMBAT" : slot === 3 ? "COLLECTION" : slot === 4 ? "MISSION" : "EMPTY"; return slot === 1 ? "\u4e3b\u52a8\u529b\u7532" : slot === 2 ? "\u6218\u6597\u5907\u7528" : slot === 3 ? "\u6536\u85cf\u5c55\u793a" : slot === 4 ? "\u4efb\u52a1\u5907\u7528" : "\u7a7a\u7f6e\u673a\u4f4d"; }
+      function getSummary(slot) { const raw = state.slotSummaries && state.slotSummaries[String(slot)]; return { hasData: !!(raw && raw.hasData), count: Number(raw && raw.count || 0), items: raw && Array.isArray(raw.items) ? raw.items : [], health: raw && Array.isArray(raw.health) ? raw.health : [], name: raw && raw.name ? String(raw.name) : "" }; }
+      function slotName(slot, summary) { return slot === 1 ? defaultSlotName(1) : (summary.name || defaultSlotName(slot)); }
+      function resultOpen() { return resultNotice.classList.contains("open"); }
+      function confirmOpen() { return confirmOverlay.classList.contains("open"); }
+      function renameOpen() { return renameOverlay.classList.contains("open"); }
+      function renderPageText() { const maxPage = Math.max(0, Math.ceil((state.maxSlot || 50) / pageSize) - 1), start = slotPage * pageSize + 1, end = Math.min(state.maxSlot || 50, start + pageSize - 1); pageText.textContent = padSlot(start) + " - " + padSlot(end) + " / " + (state.maxSlot || 50); screenNav.lastElementChild.textContent = pageText.textContent; }
+      function renderHardwareLabels() { const gamepad = inputMode === "gamepad"; mainActionKey.textContent = gamepad ? "A" : "E"; detailActionKey.textContent = gamepad ? "X" : "F"; renameActionKey.textContent = gamepad ? "Y" : "R"; backActionKey.textContent = gamepad ? "B" : "TAB"; mainActionLabel.textContent = getSummary(state.slot).hasData ? t("\u90e8\u7f72", "DEPLOY") : t("\u5b58\u653e", "STORE"); detailActionLabel.textContent = t("\u8be6\u60c5", "DETAILS"); renameActionLabel.textContent = t("\u547d\u540d", "RENAME"); backActionLabel.textContent = t("\u8fd4\u56de", "BACK"); }
+      function renderAction() { renderHardwareLabels(); }
+      function buildRow(slot) { const summary = getSummary(slot), row = document.createElement("div"); row.className = "slot-row"; row.dataset.slot = String(slot); row.dataset.filled = summary.hasData ? "true" : "false"; row.dataset.primary = slot === 1 ? "true" : "false"; row.innerHTML = "<span class=\"slot-no\">" + padSlot(slot) + "</span><span class=\"slot-label\"></span><span class=\"slot-state\"></span>"; row.querySelector(".slot-label").textContent = slotName(slot, summary); const status = row.querySelector(".slot-state"); status.textContent = summary.hasData ? (slot === 1 ? "\u25c6" : "\u25cf") : "\u25cb"; status.classList.toggle("saved", summary.hasData); status.classList.toggle("primary", slot === 1 && summary.hasData); return row; }
+      function renderSlots(reset, notify) { const maxPage = Math.max(0, Math.ceil((state.maxSlot || 50) / pageSize) - 1); slotPage = Math.max(0, Math.min(slotPage, maxPage)); const start = slotPage * pageSize + 1, end = Math.min(state.maxSlot || 50, start + pageSize - 1); slotsEl.innerHTML = ""; slotRows = []; for (let slot = start; slot <= end; slot += 1) { const row = buildRow(slot); slotRows.push(row); slotsEl.appendChild(row); } renderPageText(); const target = reset ? 0 : Math.max(0, Math.min(state.slot - start, slotRows.length - 1)); applySelection(target, false, !!notify); }
+      function applySelection(index, scroll, notify) { if (!slotRows.length) return; const count = slotRows.length; selection.index = ((Number(index) || 0) % count + count) % count; slotRows.forEach((row, rowIndex) => row.dataset.selected = rowIndex === selection.index ? "true" : "false"); const row = slotRows[selection.index]; if (row) { state.slot = Number(row.dataset.slot); if (scroll !== false) row.scrollIntoView({ block: "nearest" }); if (notify) callNative(actionMap.slot, { action: "slot", slot: state.slot, label: t("\u69fd\u4f4d ", "Slot ") + state.slot }); } renderAction(); renderDetail(); }
+      function animatePageFlip(delta) { const back = Number(delta) < 0; slotsEl.classList.remove("page-flip-forward", "page-flip-back"); screenNav.classList.remove("page-flip"); void slotsEl.offsetWidth; slotsEl.classList.add(back ? "page-flip-back" : "page-flip-forward"); screenNav.classList.add("page-flip"); window.setTimeout(() => { slotsEl.classList.remove("page-flip-forward", "page-flip-back"); screenNav.classList.remove("page-flip"); }, 320); }
+      function changePage(delta) { const maxPage = Math.max(0, Math.ceil((state.maxSlot || 50) / pageSize) - 1), nextPage = Math.max(0, Math.min(slotPage + (Number(delta) || 0), maxPage)); if (nextPage === slotPage) return; slotPage = nextPage; state.slot = slotPage * pageSize + 1; renderSlots(true, true); animatePageFlip(delta); }
+ function emptyDetailMarkup() { return english() ? "<div class=\"detail-empty\"><strong>ERROR</strong><span>NO ARMOR STORED</span><small>STORE ARMOR FIRST</small></div>" : "<div class=\"detail-empty\"><strong>\u6ca1\u6709\u5b58\u50a8\u4efb\u4f55\u52a8\u529b\u7532</strong><span>\u8bf7\u5b58\u50a8\u540e\u518d\u6765\u64cd\u4f5c</span></div>"; }
+      function renderDetail() { const summary = getSummary(state.slot); detailNumber.textContent = padSlot(state.slot); detailName.textContent = slotName(state.slot, summary); detailStatus.textContent = summary.hasData ? t("\u90e8\u4ef6\u8010\u4e45", "PART CONDITION") : t("\u7a7a\u69fd\u4f4d", "EMPTY"); detailList.innerHTML = ""; if (!summary.hasData) { detailList.innerHTML = emptyDetailMarkup(); return; } summary.items.forEach((name, index) => { const row = document.createElement("div"), rawHealth = summary.health[index], numericHealth = rawHealth === null || rawHealth === undefined || rawHealth === "" ? NaN : Number(rawHealth), health = Number.isFinite(numericHealth) ? Math.max(0, Math.min(100, Math.round(numericHealth))) + "%" : "--"; row.className = "detail-row"; row.innerHTML = "<span class=\"detail-part-name\"></span><span class=\"detail-leader\" aria-hidden=\"true\"></span><span class=\"detail-condition\">" + health + "</span>"; row.querySelector(".detail-part-name").textContent = String(name); detailList.appendChild(row); }); }
+ function renderScreen() { slotsEl.hidden = state.detailOpen; screenNav.hidden = state.detailOpen; detailView.hidden = !state.detailOpen; screenTitle.textContent = state.detailOpen ? t("\u52a8\u529b\u7532\u8be6\u60c5", "ARMOR DETAILS") : t("\u52a8\u529b\u7532\u4ed3\u5e93\u7cfb\u7edf", "ARMOR STORAGE"); renderDetail(); }
+      function closeDetails() { if (!state.detailOpen) return false; state.detailOpen = false; renderScreen(); return true; }
+      function showDetails() { if (!getSummary(state.slot).hasData) { state.detailOpen = true; renderScreen(); return; } state.detailOpen = true; renderScreen(); }
+ function openConfirm() { const stored = getSummary(state.slot).hasData; if (!stored && state.targetScanComplete && !state.targetDetected) { callNative(actionMap.store, { action: "store", slot: state.slot, label: "STORE" }); return; } state.confirmAction = stored ? "restore" : "store"; state.confirmFocus = 0; confirmTitle.textContent = stored ? t("\u90e8\u7f72\u52a8\u529b\u7532", "DEPLOY ARMOR") : t("\u5b58\u653e\u52a8\u529b\u7532", "STORE ARMOR"); confirmMessage.textContent = stored ? t("\u8981\u628a\u5f53\u524d\u69fd\u4f4d\u7684\u52a8\u529b\u7532\u90e8\u7f72\u5230\u73a9\u5bb6\u9762\u524d\u5417\uff1f", "Deploy armor from this bay?") : t("\u8981\u628a\u51c6\u661f\u76ee\u6807\u52a8\u529b\u7532\u5b58\u5165\u69fd\u4f4d " + padSlot(state.slot) + " \u5417\uff1f", "Store this armor in bay " + padSlot(state.slot) + "?"); confirmAccept.textContent = t("\u786e\u8ba4", "CONFIRM"); confirmCancel.textContent = t("\u53d6\u6d88", "CANCEL"); confirmOverlay.classList.add("open"); confirmOverlay.setAttribute("aria-hidden", "false"); renderConfirmFocus(); }
+      function closeConfirm() { state.confirmAction = ""; confirmOverlay.classList.remove("open"); confirmOverlay.setAttribute("aria-hidden", "true"); }
+      function renderConfirmFocus() { confirmAccept.dataset.selected = state.confirmFocus === 0 ? "true" : "false"; confirmCancel.dataset.selected = state.confirmFocus === 1 ? "true" : "false"; confirmAccept.setAttribute("aria-selected", state.confirmFocus === 0 ? "true" : "false"); confirmCancel.setAttribute("aria-selected", state.confirmFocus === 1 ? "true" : "false"); confirmHint.textContent = english() ? (inputMode === "gamepad" ? "LEFT / RIGHT SELECT / A CONFIRM / B BACK" : "A/D SELECT / E CONFIRM / TAB BACK") : (inputMode === "gamepad" ? "\u5de6\u53f3\u9009\u62e9 / A \u786e\u5b9a / B \u8fd4\u56de" : "A/D \u9009\u62e9 / E \u786e\u5b9a / TAB \u8fd4\u56de"); }
+      function renderRenameHint() { renameHint.textContent = english() ? (inputMode === "gamepad" ? "A CONFIRM / B BACK" : "ENTER CONFIRM / TAB BACK") : (inputMode === "gamepad" ? "A \u786e\u5b9a / B \u8fd4\u56de" : "Enter \u786e\u5b9a / TAB \u8fd4\u56de"); }
+      function openRename() { if (confirmOpen()) return; if (state.slot === 1) { callNative(actionMap.rename, { action: "rename", slot: 1, name: "" }); return; } const summary = getSummary(state.slot); renameInput.disabled = false; renameInput.value = summary.name; renameOverlay.classList.add("open"); renameOverlay.setAttribute("aria-hidden", "false"); renderRenameHint(); callNative("onPowerArmorMgrBeginTextEntry", { action: "begin-text-entry" }); const focusRename = () => { if (!renameOpen()) return; renameInput.focus(); renameInput.select(); }; window.setTimeout(focusRename, 30); window.setTimeout(focusRename, 120); }
+      function closeRename() { const wasOpen = renameOpen(); renameCloseGuardUntil = performance.now() + 250; renameInput.blur(); renameInput.disabled = true; renameOverlay.classList.remove("open"); renameOverlay.setAttribute("aria-hidden", "true"); if (wasOpen) callNative("onPowerArmorMgrEndTextEntry", { action: "end-text-entry" }); document.body.tabIndex = -1; document.body.focus({ preventScroll: true }); }
+      function submitRename() { const name = String(renameInput.value || "").trim(), key = String(state.slot), current = state.slotSummaries[key] || { hasData: false, count: 0, items: [] }; current.name = name; state.slotSummaries[key] = current; callNative(actionMap.rename, { action: "rename", slot: state.slot, name }); closeRename(); renderSlots(false); }
+      function activateConfirm() { if (state.confirmFocus === 1) { closeConfirm(); return; } const action = state.confirmAction; closeConfirm(); if (!action) return; setLedMode("busy"); callNative(action === "restore" ? actionMap.restore : actionMap.store, { action, slot: state.slot, label: action === "restore" ? "DEPLOY" : "STORE" }); }
+      function requestNativeClose() { if (closeRequested) return; closeRequested = true; setLedMode("idle"); stage.classList.add("is-closing"); closeTimer = window.setTimeout(() => callNative(actionMap.close, { action: "close", slot: state.slot, label: "BACK" }), 460); }
+      window.omNativeClose = function () { closeRequested = true; setLedMode("idle"); stage.classList.add("is-closing"); };
+      function closeInlineResult() { if (inlineResultTimer) window.clearTimeout(inlineResultTimer); inlineResultTimer = 0; resultNotice.classList.remove("open"); resultNotice.setAttribute("aria-hidden", "true"); setLedMode(state.targetDetected ? "target" : "idle"); }
+      function closeMenu() { if (renameOpen()) { closeRename(); return; } if (performance.now() < renameCloseGuardUntil) return; if (confirmOpen()) { closeConfirm(); return; } if (resultNotice.classList.contains("open")) { closeInlineResult(); return; } if (closeDetails()) return; requestNativeClose(); }
+      function powerArmorLayoutScale(profile) { const baseHeight = Math.max(240, Number(profile.baseHeight) || 720), ratio = Math.max(1, (window.innerHeight || baseHeight) / baseHeight), responsive = profile.responsive || {}, growth = Math.max(0, Number(responsive.layoutGrowthPercent || 100) / 100), minimum = Math.max(0.5, Number(responsive.minimumScalePercent || 100) / 100), maximum = Math.max(minimum, Number(responsive.maximumScalePercent || 300) / 100); return Math.max(minimum, Math.min(maximum, 1 + (ratio - 1) * growth)); }
+      function powerArmorLayoutValue(value, scale, name) { const raw = String(value).trim(), px = raw.match(/^(-?\d+(?:\.\d+)?)px$/), key = String(name || ""), unitless = /(?:opacity|brightness|saturation|contrast|scale|line-height)$/.test(key); if (unitless) return raw; if (px) return Math.round(Number(px[1]) * scale) + "px"; if (/^-?\d+(?:\.\d+)?$/.test(raw)) return Math.round(Number(raw) * scale) + "px"; return raw; }
+      function applyLayoutProfile() {
+        if (!layoutProfiles) return;
+        const width = Math.max(1, Number(window.innerWidth) || 1920), height = Math.max(1, Number(window.innerHeight) || 1080), aspect = width / height;
+        if (width < 640 || height < 360) return;
+        const key = aspect >= 2.0 ? "ultrawide" : (aspect >= 1.55 && aspect <= 1.72 ? "compact16x10" : (height < 900 ? "compact16x9" : "standard"));
+        const profile = layoutProfiles[key] || layoutProfiles.standard || {}, variables = profile.variables || {}, scale = powerArmorLayoutScale(profile);
+        appliedLayoutVariables.forEach((name) => document.documentElement.style.removeProperty("--pa-" + name));
+        appliedLayoutVariables = Object.keys(variables);
+        document.documentElement.style.setProperty("--pa-ui-scale", String(scale));
+        Object.keys(variables).forEach((name) => document.documentElement.style.setProperty("--pa-" + name, powerArmorLayoutValue(variables[name], scale, name)));
+        document.documentElement.dataset.layoutProfile = key;
+        document.documentElement.dataset.layoutScale = String(scale);
+        const labels = Array.from(document.querySelectorAll(".hardware-label")).map((label) => {
+          const style = window.getComputedStyle(label), keyStyle = window.getComputedStyle(label.querySelector(".hardware-key")), descStyle = window.getComputedStyle(label.querySelector(".hardware-desc"));
+          return { left: style.left, top: style.top, zoom: style.zoom || "1", keySize: keyStyle.fontSize, labelSize: descStyle.fontSize };
+        });
+        const debug = { profile: key, screen: [width, height], inner: [window.innerWidth, window.innerHeight], scale, labels };
+        const signature = JSON.stringify(debug);
+        if (signature !== layoutDebugSignature) {
+          layoutDebugSignature = signature;
+          callNative("onPowerArmorMgrLayoutDebug", debug);
+        }
+      }
+      window.setPowerArmorMgrLayout = function (raw) { try { const config = typeof raw === "string" ? JSON.parse(raw) : raw; const signature = JSON.stringify(config || {}); if (signature === layoutPayloadSignature) return; const profiles = config && config.profiles; const probe = profiles && (profiles.standard || profiles.compact16x9); const variables = probe && probe.variables; if (!variables || !variables["terminal-width"] || !variables["terminal-top"] || !variables["terminal-screen-left"]) return; layoutProfiles = profiles; layoutPayloadSignature = signature; applyLayoutProfile(); } catch (_) {} };
+      window.addEventListener("resize", applyLayoutProfile);
+      function resetTransientOverlays() { closeConfirm(); closeRename(); closeInlineResult(); }
+      function syncCurrentSlotView() { renderSlots(false); renderScreen(); }
+      function restartEnterAnimation() { stage.classList.add("is-ready"); stage.classList.remove("is-entering"); void stage.offsetWidth; stage.classList.add("is-entering"); }
+      window.setPowerArmorMgrState = function (raw) { try { const shouldEnter = closeRequested || stage.classList.contains("is-closing") || !stage.classList.contains("is-ready"); if (closeTimer) window.clearTimeout(closeTimer); closeTimer = 0; closeRequested = false; setLedMode("idle"); resetTransientOverlays(); stage.classList.remove("is-closing"); Object.assign(state, typeof raw === "string" ? JSON.parse(raw) : raw); state.maxSlot = state.maxSlot || 50; state.slotSummaries = state.slotSummaries || {}; state.targetDetected = !!state.canStoreTarget; state.targetScanComplete = state.targetDetected; state.detailOpen = false; slotPage = Math.floor(((state.slot || 1) - 1) / pageSize); if (shouldEnter) restartEnterAnimation(); renderSlots(false); renderScreen(); } catch (_) {} };
+      window.setPowerArmorMgrTarget = function (detected) { state.targetScanComplete = true; state.targetDetected = !!detected; state.canStoreTarget = state.targetDetected; if (!state.targetDetected && confirmOpen() && state.confirmAction === "store") closeConfirm(); };
+      window.setPowerArmorMgrSlotSummary = function (slot, raw) { const key = String(Number(slot) || 1), summary = typeof raw === "string" ? JSON.parse(raw) : raw; state.slotSummaries[key] = summary || { hasData: false, count: 0, name: "", items: [] }; if (Number(slot) === Number(state.slot)) { syncCurrentSlotView(); } else { renderSlots(false); renderAction(); renderDetail(); } };
+      window.omShowResult = function (raw) { try { const result = typeof raw === "string" ? JSON.parse(raw) : (raw || {}); if (inlineResultTimer) window.clearTimeout(inlineResultTimer); resultNotice.dataset.error = result.error ? "true" : "false"; resultNoticeTitle.textContent = String(result.title || "OPERATION COMPLETE"); resultNoticeBody.textContent = String(result.body || ""); resultNotice.classList.add("open"); resultNotice.setAttribute("aria-hidden", "false"); setLedMode(result.error ? "idle" : "success"); inlineResultTimer = window.setTimeout(() => { closeInlineResult(); setLedMode(state.targetDetected ? "target" : "idle"); }, result.error ? 6500 : 5000); } catch (_) {} };
+      window.omCloseInlineResult = closeInlineResult;
+      window.omUseKeyboard = function () { inputMode = "keyboard"; renderHardwareLabels(); if (renameOpen()) renderRenameHint(); if (confirmOpen()) renderConfirmFocus(); };
+      window.omUseGamepad = function () { inputMode = "gamepad"; renderHardwareLabels(); if (renameOpen()) renderRenameHint(); if (confirmOpen()) renderConfirmFocus(); };
+      window.omMoveFocus = function (delta) { if (resultOpen() || confirmOpen() || renameOpen()) return; if (state.detailOpen) { detailView.scrollTop += (Number(delta) || 0) * 64; return; } applySelection(selection.index + (Number(delta) || 0), true, true); };
+      window.omSlotPage = function (delta) { if (resultOpen() || renameOpen()) return; if (confirmOpen()) { const amount = Number(delta) || 0; if (amount < 0) state.confirmFocus = 0; if (amount > 0) state.confirmFocus = 1; renderConfirmFocus(); return; } closeDetails(); changePage(delta); };
+      window.omGamepadShoulder = function (delta) { if (resultOpen() || confirmOpen() || renameOpen()) return; closeDetails(); changePage(delta); };
+      window.omActivateFocused = function () { if (resultOpen()) { closeInlineResult(); return; } if (renameOpen()) { submitRename(); return; } if (confirmOpen()) { activateConfirm(); return; } openConfirm(); };
+      window.omBackOrClose = closeMenu;
+      window.omShowDetails = function () { if (resultOpen()) return; if (state.detailOpen) closeDetails(); else showDetails(); };
+      window.omRenameSlot = function () { if (!resultOpen()) openRename(); };
+      window.omSubmitRename = submitRename;
+      window.omCloseRename = closeRename;
+      window.omScrollItems = function (delta) { if (state.detailOpen) detailView.scrollTop += Number(delta) || 0; else slotsEl.scrollTop += Number(delta) || 0; };
+      window.omResultClosed = function () { setLedMode("idle"); closeInlineResult(); renderAction(); renderDetail(); };
+      mainAction.addEventListener("click", () => window.omActivateFocused()); detailAction.addEventListener("click", () => window.omShowDetails()); renameAction.addEventListener("click", () => window.omRenameSlot()); backAction.addEventListener("click", () => window.omBackOrClose(true)); confirmAccept.addEventListener("click", activateConfirm); confirmCancel.addEventListener("click", closeConfirm); renameAccept.addEventListener("click", submitRename); renameCancel.addEventListener("click", closeRename); renameInput.addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); submitRename(); } else if (event.key === "Escape" || event.key === "Tab") { event.preventDefault(); closeRename(); } });
+      renderHardwareLabels(); renderSlots(false); renderScreen();
+    })();
+  </script>
+</body>
+</html>
+

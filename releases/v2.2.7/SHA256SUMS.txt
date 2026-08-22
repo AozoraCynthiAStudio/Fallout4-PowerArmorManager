@@ -1,0 +1,2 @@
+4b3c7f33298bf51b7e0cbeae59e4e1e2919ad9d45a51c42edc344d03488c74f3  PowerArmorManager_2.2.7_CHS.zip
+9b22722359b1e02b4eeb2e3795700419d13283535104f9d550654aee0a351b2b  PowerArmorManager_2.2.7_EN.zip

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Armor Storage Result</title>
+  <style>
+    :root {
+      --green: #8bf0a8;
+      --red: #f08c7f;
+      --text: #eaf5ed;
+      --muted: #b8c8bd;
+      font-family: "Overseer", "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: transparent;
+      color: var(--text);
+      letter-spacing: 0;
+    }
+
+    .result-overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(0, 0, 0, 0.36);
+      pointer-events: none;
+    }
+
+    .result-overlay.show { display: flex; }
+
+    .result-card {
+      width: min(640px, 86vw);
+      min-height: clamp(250px, 30vh, 320px);
+      display: grid;
+      place-content: center;
+      padding: clamp(22px, 2.4vw, 32px);
+      background: rgba(8, 20, 14, 0.98);
+      border: 2px solid rgba(139, 240, 168, 0.9);
+      box-shadow: 0 22px 64px rgba(0, 0, 0, 0.58);
+    }
+
+    .result-card.error {
+      border-color: rgba(240, 140, 127, 0.92);
+    }
+
+    .result-title {
+      color: var(--green);
+      font-size: clamp(26px, 2.2vw, 34px);
+      font-weight: 800;
+      line-height: 1.2;
+      text-align: center;
+    }
+
+    .result-card.error .result-title { color: var(--red); }
+
+    .result-body {
+      margin-top: clamp(10px, 1.1vh, 16px);
+      color: var(--text);
+      font-size: clamp(18px, 1.45vw, 22px);
+      line-height: 1.45;
+      white-space: pre-line;
+      text-align: center;
+    }
+
+    .result-hint {
+      margin-top: clamp(12px, 1.4vh, 18px);
+      color: var(--muted);
+      font-size: clamp(13px, 1.05vw, 16px);
+      text-align: center;
+    }
+
+    @media (max-width: 760px), (max-height: 620px) {
+      .result-card { width: min(640px, 94vw); min-height: 250px; padding: 22px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="result-overlay" id="resultOverlay" aria-hidden="true">
+    <div class="result-card" id="resultCard" role="dialog" aria-modal="true">
+      <div>
+        <div class="result-title" id="resultTitle"></div>
+        <div class="result-body" id="resultBody"></div>
+        <div class="result-hint" id="resultHint">Press confirm or back to close</div>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const overlay = document.getElementById("resultOverlay");
+      const card = document.getElementById("resultCard");
+      const title = document.getElementById("resultTitle");
+      const body = document.getElementById("resultBody");
+      const hint = document.getElementById("resultHint");
+
+      function callClose() {
+        if (typeof window.onPowerArmorMgrResultClose === "function") {
+          window.onPowerArmorMgrResultClose("{}");
+        }
+      }
+
+      window.setPowerArmorMgrResult = function (raw) {
+        let data = raw;
+        try { data = typeof raw === "string" ? JSON.parse(raw) : raw; } catch (_) { data = {}; }
+        title.textContent = String(data && data.title || "ARMOR STORAGE");
+        body.textContent = String(data && data.body || "");
+        const error = !!(data && data.error);
+        card.classList.toggle("error", error);
+        hint.textContent = "Press confirm or back to close";
+        overlay.classList.add("show");
+        overlay.setAttribute("aria-hidden", "false");
+        clearTimeout(window.resultTimer);
+        window.resultTimer = setTimeout(callClose, error ? 6500 : 5000);
+      };
+
+      window.omCloseResult = function () {
+        clearTimeout(window.resultTimer);
+        callClose();
+      };
+    })();
+  </script>
+</body>
+</html>

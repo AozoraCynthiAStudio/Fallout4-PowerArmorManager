@@ -1,0 +1,10 @@
+*.cpp text eol=lf
+*.h text eol=lf
+*.lua text eol=lf
+*.psc text eol=lf
+*.html text eol=lf
+*.json text eol=lf
+*.ini text eol=lf
+*.md text eol=lf
+*.bat text eol=crlf
+*.txt text eol=lf
