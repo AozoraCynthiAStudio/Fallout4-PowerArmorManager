@@ -1,0 +1,85 @@
+{
+  "modName": "PowerArmorMgr",
+  "displayName": "动力甲仓库 3.0｜核心功能测试",
+  "minMcmVersion": 1,
+  "pluginRequirements": [
+    "PowerArmorMgr.esp"
+  ],
+  "content": [
+    {
+      "type": "section",
+      "text": "核心版测试"
+    },
+    {
+      "type": "text",
+      "text": "这是无 UI 的核心测试版本。请用全新测试存档或复制的存档验证，不要覆盖原有正常存档。"
+    },
+    {
+      "type": "text",
+      "text": "存放当前准星动力甲时会隐藏世界对象。读档后先用仓位检查查看引用状态，再测试部署。"
+    },
+    {
+      "type": "text",
+      "text": "禁止同时安装 2.2.7 和 3.0 DLL。两者使用同一存档序列化标识来尝试读取旧记录。"
+    }
+  ],
+  "pages": [
+    {
+      "pageDisplayName": "核心操作",
+      "content": [
+        {
+          "type": "section",
+          "text": "先选仓位，再存放或部署"
+        },
+        {
+          "id": "PA3_Store",
+          "type": "hotkey",
+          "text": "存放准星指向的动力甲",
+          "valueOptions": {
+            "allowModifierKeys": true
+          }
+        },
+        {
+          "id": "PA3_Deploy",
+          "type": "hotkey",
+          "text": "部署当前仓位动力甲",
+          "valueOptions": {
+            "allowModifierKeys": true
+          }
+        },
+        {
+          "id": "PA3_Primary",
+          "type": "hotkey",
+          "text": "主动力甲部署/召回",
+          "valueOptions": {
+            "allowModifierKeys": true
+          }
+        },
+        {
+          "id": "PA3_Next",
+          "type": "hotkey",
+          "text": "下一个仓位",
+          "valueOptions": {
+            "allowModifierKeys": true
+          }
+        },
+        {
+          "id": "PA3_Previous",
+          "type": "hotkey",
+          "text": "上一个仓位",
+          "valueOptions": {
+            "allowModifierKeys": true
+          }
+        },
+        {
+          "id": "PA3_Inspect",
+          "type": "hotkey",
+          "text": "检查当前仓位状态",
+          "valueOptions": {
+            "allowModifierKeys": true
+          }
+        }
+      ]
+    }
+  ]
+}
