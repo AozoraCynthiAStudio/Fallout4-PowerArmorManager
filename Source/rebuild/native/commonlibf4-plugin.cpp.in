@@ -1,0 +1,2 @@
+#include <F4SE/F4SE.h>
+// Entry points and version data are declared in src/main.cpp.

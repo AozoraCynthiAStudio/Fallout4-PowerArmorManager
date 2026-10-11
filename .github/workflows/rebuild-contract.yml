@@ -1,0 +1,24 @@
+name: Power Armor 3.0 core contracts
+
+on:
+  push:
+    branches:
+      - "rebuild/**"
+  pull_request:
+    paths:
+      - "Source/rebuild/**"
+      - ".github/workflows/rebuild-contract.yml"
+
+jobs:
+  test-portable-codec:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and run real C++ serializer tests
+        run: |
+          g++ -std=c++23 -Wall -Wextra -Werror -pedantic \
+            Source/rebuild/tests/test_slot_codec.cpp \
+            -o /tmp/pam3-codec-test
+          /tmp/pam3-codec-test
+      - name: Validate Papyrus and MCM cross-layer API
+        run: python3 -m unittest discover -s Source/rebuild/tests -p 'test_*.py' -v

@@ -1,0 +1,59 @@
+{
+  "modName": "PowerArmorMgr",
+  "keybinds": [
+    {
+      "id": "PA3_Store",
+      "desc": "OnStore",
+      "action": {
+        "type": "CallGlobalFunction",
+        "script": "PAM3Hotkeys",
+        "function": "OnStore"
+      }
+    },
+    {
+      "id": "PA3_Deploy",
+      "desc": "OnDeploy",
+      "action": {
+        "type": "CallGlobalFunction",
+        "script": "PAM3Hotkeys",
+        "function": "OnDeploy"
+      }
+    },
+    {
+      "id": "PA3_Primary",
+      "desc": "OnPrimary",
+      "action": {
+        "type": "CallGlobalFunction",
+        "script": "PAM3Hotkeys",
+        "function": "OnPrimary"
+      }
+    },
+    {
+      "id": "PA3_Next",
+      "desc": "OnNextSlot",
+      "action": {
+        "type": "CallGlobalFunction",
+        "script": "PAM3Hotkeys",
+        "function": "OnNextSlot"
+      }
+    },
+    {
+      "id": "PA3_Previous",
+      "desc": "OnPreviousSlot",
+      "action": {
+        "type": "CallGlobalFunction",
+        "script": "PAM3Hotkeys",
+        "function": "OnPreviousSlot"
+      }
+    },
+    {
+      "id": "PA3_Inspect",
+      "desc": "OnInspect",
+      "action": {
+        "type": "CallGlobalFunction",
+        "script": "PAM3Hotkeys",
+        "function": "OnInspect"
+      }
+    }
+  ]
+}
