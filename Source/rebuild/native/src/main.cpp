@@ -82,8 +82,8 @@ bool IsPowerArmorForm(RE::TESForm* form) {
             armor->HasKeywordString("PowerArmorFrame")) return true;
     }
     // Preserve the original fallback for bare chassis and third-party frames.
-    const char* display = RE::TESFullName::GetFullName(*form);
-    if (!display) return false;
+    const std::string_view display = RE::TESFullName::GetFullName(*form);
+    if (display.empty()) return false;
     const auto name = LowerAscii(std::string(display));
     return name.find("power armor") != std::string::npos ||
         name.find("chassis") != std::string::npos ||
