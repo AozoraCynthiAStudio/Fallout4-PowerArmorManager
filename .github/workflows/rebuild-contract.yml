@@ -22,3 +22,29 @@ jobs:
           /tmp/pam3-codec-test
       - name: Validate Papyrus and MCM cross-layer API
         run: python3 -m unittest discover -s Source/rebuild/tests -p 'test_*.py' -v
+
+  build-windows-f4se:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Power Armor Manager source
+        uses: actions/checkout@v4
+      - name: Checkout matching CommonLibF4 source
+        uses: actions/checkout@v4
+        with:
+          repository: frakkin64/commonlibf4
+          path: _deps/commonlibf4
+          submodules: recursive
+      - name: Set up xmake
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: "latest"
+      - name: Compile F4SE DLL with MSVC
+        shell: pwsh
+        env:
+          COMMONLIBF4_XMAKE_ROOT: ${{ github.workspace }}\_deps\commonlibf4
+        run: |
+          Set-Location Source/rebuild/native
+          xmake f -c -y --toolchain=msvc -m releasedbg
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          xmake build -y -vD -j2
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
